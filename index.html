@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <title>kaboom</title>
+  <meta charset="utf-8">
+  <style>
+    * {
+      margin: 0;
+    }
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+<script src="https://kaboomjs.com/lib/0.5.0/kaboom.js"></script>
+<script src="https://kaboomjs.com/lib/0.5.0/plugins/aseprite.js"></script>
+<script src="https://kaboomjs.com/lib/0.5.0/plugins/pedit.js"></script>
+<script src="https://kaboomjs.com/pub/legacy/kbmsprite.js"></script>
+
+  <script>
+
+kaboom({
+  ...{"fullscreen":false,"width":80,"height":100,"scale":4,"startScene":"main","version":"0.5.0","clearColor":[0,0,0,1]},
+  global: true,
+  plugins: [ peditPlugin, asepritePlugin, kbmspritePlugin ],
+});
+loadKbmsprite("background", "sprites/background.kbmsprite");
+loadKbmsprite("car", "sprites/car.kbmsprite");
+loadKbmsprite("enemy", "sprites/enemy.kbmsprite");
+scene("death", (args = {}) => {
+add([
+    text(`${args.score}`, 24),
+]);
+
+add([
+    text("press spacebar to play again", 2.5),
+    pos(0, 30),
+]);
+
+keyPress("space", () => {
+    go("main");
+});
+
+add([
+    text("Game by Dat Nguyen", 2.5),
+    pos(0, 90),
+]);
+});
+scene("main", (args = {}) => {
+const speed = 90;
+let speedMod = 1;
+const rightBound = 58;
+const leftBound = 12;
+
+layers([
+  "bg",
+  "car",
+  "ui",
+], "car");
+
+add([
+  sprite('background'),
+  pos(0,0),
+  layer('bg'),
+  "road",
+]);
+
+
+const car = add([
+  sprite('car'),
+  pos(36.5,80),
+]);
+
+
+add([
+		sprite("background"),
+		pos(0, -height()),
+    layer('bg'),
+		"road"
+	]);
+
+
+
+ action("road", (r) => {
+    r.move(0,speed * speedMod);
+    if (r.pos.y >= height()) {
+			r.pos.y += -height() * 2;
+		}
+});
+
+keyDown("right", () => {
+  if (car.pos.x <= rightBound){
+    car.move(speed / 2, 0);
+  }
+});
+
+keyDown("left", () => {
+    if (car.pos.x >= leftBound){
+    car.move(-speed / 2, 0);
+  }
+});
+
+keyDown("up", () => {
+  speedMod = 1.5;
+});
+
+keyRelease("up", () => {
+  speedMod = 1;
+});
+
+keyDown("down", () => {
+  speedMod = 0.55;
+});
+
+keyRelease("down", () => {
+  speedMod = 1;
+});
+
+
+loop(0.6, () => {
+    add([
+    sprite('enemy'),
+    pos(rand(leftBound, rightBound), -50),
+    "enemy",
+    "move",
+  ]);
+
+}); 
+
+action("move", (o) => {
+  o.move(0, (speed - 20) * speedMod);
+   if (o.pos.y > height() + 10) {
+    destroy(o);
+    happiness.value += 1;
+  }
+});
+
+car.collides("enemy", (e) => {
+  go("death", { score: happiness.value, })
+});
+
+
+
+const happiness = add([
+		text("0", 4),
+		pos(4, 4),
+		layer("ui"),
+		{
+			value: 0,
+		},
+	]);
+
+happiness.action(() => {
+		happiness.text = `score: ${happiness.value}`;
+	});
+  
+
+
+
+
+
+
+
+});
+start("main");
+
+  </script>
+</body>
+
+</html>
